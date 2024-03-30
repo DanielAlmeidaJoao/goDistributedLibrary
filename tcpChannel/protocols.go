@@ -1,4 +1,4 @@
-package protocolLIstenerLogics
+package tcpChannel
 
 type ProtoInterface interface {
 	ProtocolUniqueId() APP_PROTO_ID

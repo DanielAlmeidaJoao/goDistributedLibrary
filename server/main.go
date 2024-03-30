@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
-	protoListener "github.com/DanielAlmeidaJoao/goDistributedLibrary/protocolLIstenerLogics"
+	protoListener "github.com/DanielAlmeidaJoao/goDistributedLibrary/tcpChannel"
 	testUtils "github.com/DanielAlmeidaJoao/goDistributedLibrary/testUtils"
 )
 
@@ -19,7 +19,7 @@ type ProtoInterface interface {
 
 /** ****/
 
-// type MESSAGE_HANDLER_TYPE func(from string, protoSource APP_PROTO_ID, data protocolLIstenerLogics.NetworkMessage)
+// type MESSAGE_HANDLER_TYPE func(from string, protoSource APP_PROTO_ID, data tcpChannel.NetworkMessage)
 func main() {
 	//go build ./...
 	fmt.Println("SERVER STARTED")
