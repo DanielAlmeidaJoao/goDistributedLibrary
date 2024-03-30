@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
-	protoListener "github.com/DanielAlmeidaJoao/goDistributedLibrary/tcpChannel/protocolLIstenerLogics"
-	testUtils "github.com/DanielAlmeidaJoao/goDistributedLibrary/tcpChannel/testUtils"
+	protoListener "github.com/DanielAlmeidaJoao/goDistributedLibrary/protocolLIstenerLogics"
+	testUtils "github.com/DanielAlmeidaJoao/goDistributedLibrary/testUtils"
 )
 
 /**

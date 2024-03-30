@@ -1,6 +1,6 @@
 package testUtils
 
-import protoListener "github.com/DanielAlmeidaJoao/goDistributedLibrary/tcpChannel/protocolLIstenerLogics"
+import protoListener "github.com/DanielAlmeidaJoao/goDistributedLibrary/protocolLIstenerLogics"
 
 /*** ***/
 type EchoMessage struct {

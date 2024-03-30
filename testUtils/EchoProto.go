@@ -2,7 +2,7 @@ package testUtils
 
 import (
 	"fmt"
-	protoListener "github.com/DanielAlmeidaJoao/goDistributedLibrary/tcpChannel/protocolLIstenerLogics"
+	protoListener "github.com/DanielAlmeidaJoao/goDistributedLibrary/protocolLIstenerLogics"
 	"log"
 )
 
