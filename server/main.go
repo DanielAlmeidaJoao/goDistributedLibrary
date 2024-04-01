@@ -41,7 +41,7 @@ func main() {
 	err1 := pp.RegisterNetworkMessageHandler(protoListener.MessageHandlerID(2), proto.HandleMessage)
 	err2 := pp.RegisterNetworkMessageHandler(protoListener.MessageHandlerID(3), proto.HandleMessage2) //registar no server
 
-	//err2 = pp.RegisterLocalCommunication(proto.ProtocolUniqueId(), proto2.ProtocolUniqueId(), 656, proto2.HandleLocalCommunication) //registar no server
+	//err2 = pp.SendLocalEvent(proto.ProtocolUniqueId(), proto2.ProtocolUniqueId(), 656, proto2.HandleLocalCommunication) //registar no server
 	//fmt.Println(err2)
 	fmt.Println("ERROR REGISTERING MSG HANDLERS:", err1, err2)
 	fmt.Println("SERVER STARTED4")
