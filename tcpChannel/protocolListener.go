@@ -21,7 +21,7 @@ type ProtoListenerInterface interface {
 	//StartProtocols() error
 	RegisterNetworkMessageHandler(handlerId MessageHandlerID, funcHandler MESSAGE_HANDLER_TYPE) error
 	RegisterTimeout(sourceProto APP_PROTO_ID, duration time.Duration, data interface{}, funcToExecute TimerHandlerFunc) int
-	RegisterLocalCommunication(sourceProto, destProto APP_PROTO_ID, data interface{}, funcToExecute LocalProtoComHandlerFunc) error
+	SendLocalEvent(sourceProto, destProto APP_PROTO_ID, data interface{}, funcToExecute LocalProtoComHandlerFunc) error
 	CancelTimer(timerId int) bool
 	RegisterPeriodicTimeout(sourceProto APP_PROTO_ID, duration time.Duration, data interface{}, funcToExecute TimerHandlerFunc) int
 	RemoveProtocol(id APP_PROTO_ID)
@@ -133,12 +133,12 @@ func (l *ProtoListener) RegisterPeriodicTimeout(sourceProto APP_PROTO_ID, durati
 	return aux
 }
 
-func (l *ProtoListener) RegisterLocalCommunication(sourceProto, destProto APP_PROTO_ID, data interface{}, funcToExecute LocalProtoComHandlerFunc) error {
+func (l *ProtoListener) SendLocalEvent(sourceProto, destProto APP_PROTO_ID, data interface{}, funcToExecute LocalProtoComHandlerFunc) error {
 	proto := l.protocols[destProto]
 	if proto == nil {
 		return UNKNOWN_PROTOCOL
 	}
-	proto.localCommunicationQueue <- NewLocalCommunicationEvent(sourceProto, destProto, data, funcToExecute)
+	proto.localCommunicationQueue <- NewLocalCommunicationEvent(sourceProto, proto.proto, data, funcToExecute)
 	return nil
 }
 
@@ -226,7 +226,11 @@ func (l *ProtoListener) auxRunProtocol(protoWrapper *protoWrapper) {
 							proto.OnMessageArrival(networkEvent.customConn, networkEvent.SourceProto, networkEvent.DestProto, networkEvent.Data, l.channel)
 						} else {
 							messageHandler := l.messageHandlers[networkEvent.MessageHandlerID]
-							messageHandler(networkEvent.customConn, networkEvent.SourceProto, NewCustomReader(networkEvent.Data, l.order))
+							if messageHandler == nil {
+								log.Printf("RECEIVED A NETWORK MESSAGE TO AN INVALID MESSAGE HANDLER <%d>. DEST PROTO %d \n", networkEvent.MessageHandlerID, networkEvent.DestProto)
+							} else {
+								messageHandler(networkEvent.customConn, networkEvent.SourceProto, NewCustomReader(networkEvent.Data, l.order))
+							}
 						}
 					default:
 						(l.channel).CloseConnection(networkEvent.customConn.connectionKey)

@@ -65,7 +65,7 @@ func Abort(err error) bool {
 
 type LocalCommunicationEvent struct {
 	sourceProto APP_PROTO_ID
-	destProto   APP_PROTO_ID
+	destProto   ProtoInterface
 	data        interface{}
 	funcHandler LocalProtoComHandlerFunc
 }
@@ -78,9 +78,9 @@ func (l *LocalCommunicationEvent) ExecuteFunc() {
 type MsgHandlerFunc func(from net.Addr, data []byte, sourceProto APP_PROTO_ID, eventType NET_EVENT)
 
 type TimerHandlerFunc func(sourceProto APP_PROTO_ID, data interface{})
-type LocalProtoComHandlerFunc func(sourceProto, destProto APP_PROTO_ID, data interface{})
+type LocalProtoComHandlerFunc func(sourceProto APP_PROTO_ID, destProto ProtoInterface, data interface{})
 
-func NewLocalCommunicationEvent(sourceProto, destProto APP_PROTO_ID, data interface{}, funcHandler LocalProtoComHandlerFunc) *LocalCommunicationEvent {
+func NewLocalCommunicationEvent(sourceProto APP_PROTO_ID, destProto ProtoInterface, data interface{}, funcHandler LocalProtoComHandlerFunc) *LocalCommunicationEvent {
 	return &LocalCommunicationEvent{
 		sourceProto: sourceProto,
 		destProto:   destProto,

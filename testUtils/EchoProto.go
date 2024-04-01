@@ -51,7 +51,7 @@ func (p *ProtoEcho) HandleMessage(customConn *protoListener.CustomConnection, pr
 		First:  customConn.GetConnectionKey(),
 		Second: msg,
 	}
-	err2 := p.listener.RegisterLocalCommunication(p.ProtocolUniqueId(), 50, pair, p.Proto2GoingToReply) //registar no server
+	err2 := p.listener.SendLocalEvent(p.ProtocolUniqueId(), 50, pair, p.Proto2GoingToReply) //registar no server
 	if err2 != nil {
 		log.Println("ERROR SENDING DATA TO ANOTHER PROTO", err2)
 	}
@@ -75,7 +75,7 @@ func (p *ProtoEcho) HandleLocalCommunication(sourceProto, destProto protoListene
 	log.Println(sourceProto, destProto, data)
 }
 
-func (p *ProtoEcho) Proto2GoingToReply(sourceProto, destProto protoListener.APP_PROTO_ID, data interface{}) {
+func (p *ProtoEcho) Proto2GoingToReply(sourceProto protoListener.APP_PROTO_ID, destProto protoListener.ProtoInterface, data interface{}) {
 	log.Println(p.id, "RECEVEID DATA FROM:", sourceProto, destProto, data)
 
 	pair, ok := data.(*protoListener.CustomPair[string, *EchoMessage])
