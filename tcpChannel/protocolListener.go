@@ -215,7 +215,7 @@ func (l *ProtoListener) auxRunProtocol(protoWrapper *protoWrapper) {
 			select {
 			case networkEvent, ok := <-protoWrapper.queue:
 				if ok {
-					log.Printf("PROTOCOL <%d> RECEIVED AN EVENT. EVENT TYPE <%d>\n", proto.ProtocolUniqueId(), networkEvent.NET_EVENT)
+					//log.Printf("PROTOCOL <%d> RECEIVED AN EVENT. EVENT TYPE <%d>\n", proto.ProtocolUniqueId(), networkEvent.NET_EVENT)
 					switch networkEvent.NET_EVENT {
 					case CONNECTION_UP:
 						proto.ConnectionUp(networkEvent.customConn, l.channel)
@@ -247,7 +247,7 @@ func (l *ProtoListener) auxRunProtocol(protoWrapper *protoWrapper) {
 							// it is a timeout, otherwise it is a periodic timer
 							delete(l.timerHandlers, timerId)
 						}
-						args.funcHandler(args.protoId, args.data)
+						args.funcHandler(timerId, args.protoId, args.data)
 					}
 				} else {
 					return
@@ -268,7 +268,7 @@ func (l *ProtoListener) auxRunProtocol(protoWrapper *protoWrapper) {
 // TODO should all protocols receive connection up event ??
 func (l *ProtoListener) DeliverEvent(event *NetworkEvent) {
 	if event.DestProto == ALL_PROTO_ID {
-		log.Default().Println("GOING TO DELIVER AN EVENT TO ALL PROTOCOLS")
+		//log.Default().Println("GOING TO DELIVER AN EVENT TO ALL PROTOCOLS")
 		for _, proto := range l.protocols {
 			proto.queue <- event
 		}
@@ -277,7 +277,7 @@ func (l *ProtoListener) DeliverEvent(event *NetworkEvent) {
 		if protocol == nil {
 			log.Println("RECEIVED EVENT FOR A NON EXISTENT PROTOCOL!")
 		} else {
-			log.Default().Println("GOING TO DELIVER AN EVENT TO THE PROTOCOL:", event.SourceProto)
+			//log.Println("GOING TO DELIVER AN EVENT TO THE PROTOCOL:", event.SourceProto)
 			protocol.queue <- event
 		}
 	}

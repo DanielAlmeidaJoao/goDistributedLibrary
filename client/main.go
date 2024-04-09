@@ -29,7 +29,7 @@ func TimerFunc1(proto protoListener.APP_PROTO_ID, message interface{}) {
 		log.Println("DATA IS WRONG TYPE")
 	}
 }
-func PeriodicTimerHandler(proto protoListener.APP_PROTO_ID, message interface{}) {
+func PeriodicTimerHandler(timerId int, proto protoListener.APP_PROTO_ID, message interface{}) {
 	localTime := time.Now()
 	protocol, ok := message.(*testUtils.ProtoEcho)
 	if ok {

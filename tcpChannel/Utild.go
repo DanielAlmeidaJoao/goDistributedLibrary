@@ -77,7 +77,7 @@ func (l *LocalCommunicationEvent) ExecuteFunc() {
 // type TimerEvent
 type MsgHandlerFunc func(from net.Addr, data []byte, sourceProto APP_PROTO_ID, eventType NET_EVENT)
 
-type TimerHandlerFunc func(sourceProto APP_PROTO_ID, data interface{})
+type TimerHandlerFunc func(timerId int, sourceProto APP_PROTO_ID, data interface{})
 type LocalProtoComHandlerFunc func(sourceProto APP_PROTO_ID, destProto ProtoInterface, data interface{})
 
 func NewLocalCommunicationEvent(sourceProto APP_PROTO_ID, destProto ProtoInterface, data interface{}, funcHandler LocalProtoComHandlerFunc) *LocalCommunicationEvent {

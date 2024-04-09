@@ -145,7 +145,6 @@ func (c *tcpChannel) auxAddCon(customCon *CustomConnection, conn net.Conn, liste
 		log.Println(c.connections[listenAddress.String()].conn == conn)
 		addressKey = conn.LocalAddr().String()
 	}
-	log.Println("ADDRESS KEY:", addressKey)
 
 	c.connections[addressKey] = customCon
 	c.mutex.Unlock()
@@ -209,7 +208,7 @@ func writeHeaders(buf *CustomWriter, source, destProto APP_PROTO_ID, msgType MSG
 	buf.SetOffSet(buf.OffSet() + 4)
 }
 
-//write order: msgType(uint8), sourceProto(uint16), destProto(uint16),dataLength(uint32),appData
+// write order: msgType(uint8), sourceProto(uint16), destProto(uint16),dataLength(uint32),appData
 func (t *tcpChannel) Connections() []*CustomConnection {
 	cons := make([]*CustomConnection, len(t.connections))
 	count := 0
