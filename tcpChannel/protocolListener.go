@@ -159,6 +159,9 @@ func (l *ProtoListener) AddProtocol(protocol ProtoInterface) error {
 	if l.protocols[(protocol).ProtocolUniqueId()] != nil {
 		return PROTOCOL_EXIST_ALREADY
 	}
+	if ALL_PROTO_ID == protocol.ProtocolUniqueId() {
+		return RESERVED_PROTOCOL_ID
+	}
 	l.protocols[(protocol).ProtocolUniqueId()] = &protoWrapper{
 		queue:                   make(chan *NetworkEvent, 50),
 		proto:                   protocol,
@@ -229,7 +232,6 @@ func (l *ProtoListener) auxRunProtocol(protoWrapper *protoWrapper) {
 							if messageHandler == nil {
 								log.Printf("RECEIVED A NETWORK MESSAGE TO AN INVALID MESSAGE HANDLER <%d>. DEST PROTO %d \n", networkEvent.MessageHandlerID, networkEvent.DestProto)
 							} else {
-								log.Println("555555555555555 RECEIVED TO ", networkEvent.MessageHandlerID)
 								messageHandler(networkEvent.customConn, networkEvent.SourceProto, NewCustomReader(networkEvent.Data, l.order))
 							}
 						}
