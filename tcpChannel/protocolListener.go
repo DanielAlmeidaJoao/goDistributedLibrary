@@ -151,7 +151,9 @@ func (l *ProtoListener) SendLocalEvent(sourceProto, destProto APP_PROTO_ID, data
 func (l *ProtoListener) CancelTimer(timerId int) bool {
 	l.mutex.Lock()
 	args := l.timerHandlers[timerId]
-	delete(l.timerHandlers, timerId)
+	if args != nil {
+		delete(l.timerHandlers, timerId)
+	}
 	l.mutex.Unlock()
 	if args != nil {
 		if args.timer == nil {
