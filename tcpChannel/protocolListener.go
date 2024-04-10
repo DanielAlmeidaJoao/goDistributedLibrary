@@ -229,6 +229,7 @@ func (l *ProtoListener) auxRunProtocol(protoWrapper *protoWrapper) {
 							if messageHandler == nil {
 								log.Printf("RECEIVED A NETWORK MESSAGE TO AN INVALID MESSAGE HANDLER <%d>. DEST PROTO %d \n", networkEvent.MessageHandlerID, networkEvent.DestProto)
 							} else {
+								log.Println("555555555555555 RECEIVED TO ", networkEvent.MessageHandlerID)
 								messageHandler(networkEvent.customConn, networkEvent.SourceProto, NewCustomReader(networkEvent.Data, l.order))
 							}
 						}
