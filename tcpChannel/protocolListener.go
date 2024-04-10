@@ -99,29 +99,28 @@ func (l *ProtoListener) WaitForProtocolsToEnd(closeConnections bool) {
 	}
 }
 func (l *ProtoListener) RegisterTimeout(sourceProto APP_PROTO_ID, duration time.Duration, data interface{}, funcToExecute TimerHandlerFunc) int {
+	l.mutex.Lock()
+	l.timersId++
 	aux := l.timersId
 	t := time.AfterFunc(duration, func() {
 		l.protocols[sourceProto].timeoutChannel <- aux
 	})
-	l.timerHandlers[l.timersId] = &timerArgs{
+	auxT := &timerArgs{
 		protoId:     sourceProto,
 		data:        data,
 		funcHandler: funcToExecute,
 		timer:       t,
 	}
-	l.timersId++
+	l.timerHandlers[l.timersId] = auxT
+	l.mutex.Unlock()
 	return aux
 }
 
 // I DONT LIKE IT BECAUSE FOR EACH TIMER I NEED TO HAVE A GOROUTINE
 func (l *ProtoListener) RegisterPeriodicTimeout(sourceProto APP_PROTO_ID, duration time.Duration, data interface{}, funcToExecute TimerHandlerFunc) int {
 	ticker := time.NewTicker(duration)
-	aux := l.timersId
-	go func() {
-		for range ticker.C {
-			l.protocols[sourceProto].timeoutChannel <- aux
-		}
-	}()
+	l.mutex.Lock()
+	l.timersId++
 	l.timerHandlers[l.timersId] = &timerArgs{
 		protoId:       sourceProto,
 		data:          data,
@@ -129,7 +128,14 @@ func (l *ProtoListener) RegisterPeriodicTimeout(sourceProto APP_PROTO_ID, durati
 		timer:         nil,
 		periodicTimer: ticker,
 	}
-	l.timersId++
+	aux := l.timersId
+	l.mutex.Unlock()
+	go func() {
+		for range ticker.C {
+			l.protocols[sourceProto].timeoutChannel <- aux
+		}
+	}()
+
 	return aux
 }
 
