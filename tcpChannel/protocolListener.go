@@ -251,6 +251,7 @@ func (l *ProtoListener) auxRunProtocol(protoWrapper *protoWrapper) {
 						log.Fatal(fmt.Sprintf("RECEIVED AN EVENT NOT PART OF THE PROTOCOL. CONNECTION CLOSED %s", networkEvent.customConn.remoteListenAddr.String()))
 					}
 				} else {
+					log.Println("PROTOCOL CHANNEL ENDED 1; ID: ", proto.ProtocolUniqueId())
 					return
 				}
 			case timerId, ok := <-protoWrapper.timeoutChannel:
@@ -264,12 +265,14 @@ func (l *ProtoListener) auxRunProtocol(protoWrapper *protoWrapper) {
 						args.funcHandler(timerId, args.protoId, args.data)
 					}
 				} else {
+					log.Println("PROTOCOL CHANNEL ENDED 2; ID: ", proto.ProtocolUniqueId())
 					return
 				}
 			case localEventCom, ok := <-protoWrapper.localCommunicationQueue:
 				if ok {
 					localEventCom.ExecuteFunc()
 				} else {
+					log.Println("PROTOCOL CHANNEL ENDED 3; ID: ", proto.ProtocolUniqueId())
 					return
 				}
 			}
