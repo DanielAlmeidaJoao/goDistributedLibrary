@@ -44,7 +44,7 @@ func (p *ProtoEcho) ConnectionUp(customCon *protoListener.CustomConnection, chan
 func (p *ProtoEcho) ConnectionDown(customCon *protoListener.CustomConnection, channelInterface protoListener.ChannelInterface) {
 	log.Printf("CONNECTION IS DOW. TO/FROM <%s>\n", customCon.GetConnectionKey())
 }
-func (p *ProtoEcho) HandleMessage(customConn *protoListener.CustomConnection, protoSource protoListener.APP_PROTO_ID, data *protoListener.CustomReader) {
+func (p *ProtoEcho) HandleMessage(selfProto protoListener.ProtoInterface, customConn *protoListener.CustomConnection, protoSource protoListener.APP_PROTO_ID, data *protoListener.CustomReader) {
 	msg := DeserializeData(data)
 	log.Println("RECEIVED MESSAGE IS:", msg.Data, msg.Count)
 	pair := &protoListener.CustomPair[string, *EchoMessage]{
@@ -59,12 +59,12 @@ func (p *ProtoEcho) HandleMessage(customConn *protoListener.CustomConnection, pr
 func sameMsgs(m1, m2 *EchoMessage) bool {
 	return m1.Count == m2.Count && m1.Data == m2.Data
 }
-func (p *ProtoEcho) ClientHandleMessage(customConn *protoListener.CustomConnection, protoSource protoListener.APP_PROTO_ID, data *protoListener.CustomReader) {
+func (p *ProtoEcho) ClientHandleMessage(selfProto protoListener.ProtoInterface, customConn *protoListener.CustomConnection, protoSource protoListener.APP_PROTO_ID, data *protoListener.CustomReader) {
 	msg := DeserializeData(data)
 	m := p.MessagesSent[int(msg.Count)]
 	log.Println("CLIENT RECEIVED THE SAME MESSAGE ? ", sameMsgs(m, msg), m.Count)
 }
-func (p *ProtoEcho) HandleMessage2(customConn *protoListener.CustomConnection, protoSource protoListener.APP_PROTO_ID, data *protoListener.CustomReader) {
+func (p *ProtoEcho) HandleMessage2(selfProto protoListener.ProtoInterface, customConn *protoListener.CustomConnection, protoSource protoListener.APP_PROTO_ID, data *protoListener.CustomReader) {
 	fmt.Println("RECEIVED A RANDOM MESSAGE FROM ", customConn.GetConnectionKey())
 	msg := DeserializeDataRandomMSG(data)
 	println("RECEIVED RANDOM MESSAGE IS:", msg.Data, msg.Count)
