@@ -290,7 +290,8 @@ func (l *ProtoListener) DeliverEvent(event *NetworkEvent) {
 			proto.queue <- event
 		}
 	} else {
-		protocol := l.protocols[event.SourceProto]
+		//protocol := l.protocols[event.SourceProto]
+		protocol := l.protocols[event.DestProto]
 		if protocol == nil {
 			log.Println("RECEIVED EVENT FOR A NON EXISTENT PROTOCOL!")
 		} else {
