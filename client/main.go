@@ -62,7 +62,7 @@ func main() {
 	}
 
 	//err := protocolsManager.StartProtocols()
-	err := protocolsManager.StartProtocol(proto)
+	err := protocolsManager.StartProtocol(proto, 200, 100, 20)
 	if err != nil {
 		log.Fatal(err)
 		panic(1)

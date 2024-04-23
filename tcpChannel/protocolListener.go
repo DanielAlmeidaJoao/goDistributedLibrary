@@ -16,7 +16,7 @@ type ConnectionState struct {
 }
 type ProtoListenerInterface interface {
 	//AddProtocol(protocol ProtoInterface) error
-	StartProtocol(protoWrapper ProtoInterface) error
+	StartProtocol(protoWrapper ProtoInterface, networkQueueSize int, timeoutQueueSize int, localCommQueueSize int) error
 	WaitForProtocolsToEnd(closeConnections bool)
 	//StartProtocols() error
 	RegisterNetworkMessageHandler(handlerId MessageHandlerID, funcHandler MESSAGE_HANDLER_TYPE) error
@@ -165,7 +165,7 @@ func (l *ProtoListener) CancelTimer(timerId int) bool {
 	return true
 }
 
-func (l *ProtoListener) AddProtocol(protocol ProtoInterface) error {
+func (l *ProtoListener) AddProtocol(protocol ProtoInterface, networkQueueSize int, timeoutQueueSize int, localCommQueueSize int) error {
 	//TODO make the constants dynamic
 	if l.protocols[(protocol).ProtocolUniqueId()] != nil {
 		return PROTOCOL_EXIST_ALREADY
@@ -174,10 +174,10 @@ func (l *ProtoListener) AddProtocol(protocol ProtoInterface) error {
 		return RESERVED_PROTOCOL_ID
 	}
 	l.protocols[(protocol).ProtocolUniqueId()] = &protoWrapper{
-		queue:                   make(chan *NetworkEvent, 50),
+		queue:                   make(chan *NetworkEvent, networkQueueSize),
 		proto:                   protocol,
-		timeoutChannel:          make(chan int, 100),
-		localCommunicationQueue: make(chan *LocalCommunicationEvent, 20),
+		timeoutChannel:          make(chan int, timeoutQueueSize),
+		localCommunicationQueue: make(chan *LocalCommunicationEvent, localCommQueueSize),
 	}
 	return nil
 }
@@ -207,8 +207,8 @@ func (l *ProtoListener) StartProtocols() error {
 	return nil
 
 }
-func (l *ProtoListener) StartProtocol(protoWrapper ProtoInterface) error {
-	err := l.AddProtocol(protoWrapper)
+func (l *ProtoListener) StartProtocol(protoWrapper ProtoInterface, networkQueueSize int, timeoutQueueSize int, localCommQueueSize int) error {
+	err := l.AddProtocol(protoWrapper, networkQueueSize, timeoutQueueSize, localCommQueueSize)
 	if len(l.protocols) == 1 {
 		if ch, ok := l.channel.(*tcpChannel); ok {
 			ch.Start()

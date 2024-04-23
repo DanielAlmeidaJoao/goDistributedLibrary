@@ -28,9 +28,10 @@ func main() {
 	proto2 := testUtils.NewEchoProto2(pp)
 
 	fmt.Println("SERVER STARTED2")
-	err := pp.StartProtocol(proto)
+
+	err := pp.StartProtocol(proto, 200, 100, 20)
 	fmt.Println(err)
-	err = pp.StartProtocol(proto2)
+	err = pp.StartProtocol(proto2, 200, 100, 20)
 	fmt.Println(err)
 
 	fmt.Println("SERVER STARTED3")
