@@ -9,7 +9,7 @@ type NetworkMessage interface {
 }
 
 // type MESSAGE_HANDLER_TYPE func(from string, protoSource APP_PROTO_ID, data []byte)
-type MESSAGE_HANDLER_TYPE func(selfProto ProtoInterface, customConn *CustomConnection, protoSource APP_PROTO_ID, data *CustomReader)
+type MESSAGE_HANDLER_TYPE func(protoAPI ProtocolAPI, customConn *CustomConnection, protoSource APP_PROTO_ID, data *CustomReader)
 
 type CustomWriter struct {
 	data   []byte

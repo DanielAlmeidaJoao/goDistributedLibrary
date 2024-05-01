@@ -2,10 +2,10 @@ package tcpChannel
 
 type ProtoInterface interface {
 	ProtocolUniqueId() APP_PROTO_ID
-	OnStart(channelInterface ChannelInterface)
-	OnMessageArrival(customCon *CustomConnection, source, destProto APP_PROTO_ID, msg []byte, channelInterface ChannelInterface)
-	ConnectionUp(customCon *CustomConnection, channelInterface ChannelInterface)
-	ConnectionDown(customCon *CustomConnection, channelInterface ChannelInterface)
+	OnStart(protocolAPI ProtocolAPI)
+	OnMessageArrival(customCon *CustomConnection, source, destProto APP_PROTO_ID, msg []byte, protocolAPI ProtocolAPI)
+	ConnectionUp(customCon *CustomConnection, protocolAPI ProtocolAPI)
+	ConnectionDown(customCon *CustomConnection, protocolAPI ProtocolAPI)
 }
 
 type ProtocolManager struct {

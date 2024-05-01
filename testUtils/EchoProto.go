@@ -7,21 +7,21 @@ import (
 )
 
 type ProtoEcho struct {
-	id               protoListener.APP_PROTO_ID
-	ChannelInterface protoListener.ChannelInterface
-	ServerAddr       *protoListener.CustomConnection
-	Counter          int
-	listener         protoListener.ProtoListenerInterface
-	MessagesSent     map[int]*EchoMessage
+	id           protoListener.APP_PROTO_ID
+	ProtoAPI     protoListener.ProtocolAPI
+	ServerAddr   *protoListener.CustomConnection
+	Counter      int
+	listener     protoListener.ProtoListenerInterface
+	MessagesSent map[int]*EchoMessage
 }
 
 /*
 
 	ProtocolUniqueId() gobabelUtils.APP_PROTO_ID
-	OnStart(channelInterface ChannelInterface)
-	OnMessageArrival(customCon *customConnection, source, destProto gobabelUtils.APP_PROTO_ID, msg []byte, channelInterface ChannelInterface)
-	ConnectionUp(customCon *customConnection, channelInterface ChannelInterface)
-	ConnectionDown(customCon *customConnection, channelInterface ChannelInterface)
+	OnStart(channelInterface ProtoAPI)
+	OnMessageArrival(customCon *customConnection, source, destProto gobabelUtils.APP_PROTO_ID, msg []byte, channelInterface ProtoAPI)
+	ConnectionUp(customCon *customConnection, channelInterface ProtoAPI)
+	ConnectionDown(customCon *customConnection, channelInterface ProtoAPI)
 
 */
 
@@ -29,42 +29,44 @@ func (p *ProtoEcho) ProtocolUniqueId() protoListener.APP_PROTO_ID {
 	return p.id
 }
 
-func (p *ProtoEcho) OnStart(channelInterface protoListener.ChannelInterface) {
-	p.ChannelInterface = channelInterface
+func (p *ProtoEcho) OnStart(channelInterface protoListener.ProtocolAPI) {
+	p.ProtoAPI = channelInterface
 	log.Println("PROTOCOL STARTED: ", p.ProtocolUniqueId())
 }
-func (p *ProtoEcho) OnMessageArrival(customCon *protoListener.CustomConnection, source, destProto protoListener.APP_PROTO_ID, msg []byte, channelInterface protoListener.ChannelInterface) {
+func (p *ProtoEcho) OnMessageArrival(customCon *protoListener.CustomConnection, source, destProto protoListener.APP_PROTO_ID, msg []byte, channelInterface protoListener.ProtocolAPI) {
 	str := string(msg)
 	fmt.Println("------------ RECEIVED MESSAGE FROM: -----------------", customCon.GetConnectionKey(), str)
 }
-func (p *ProtoEcho) ConnectionUp(customCon *protoListener.CustomConnection, channelInterface protoListener.ChannelInterface) {
+func (p *ProtoEcho) ConnectionUp(customCon *protoListener.CustomConnection, channelInterface protoListener.ProtocolAPI) {
 	log.Printf("CONNECTION IS UP. FROM <%s>\n", customCon.GetConnectionKey())
 	p.ServerAddr = customCon
 }
-func (p *ProtoEcho) ConnectionDown(customCon *protoListener.CustomConnection, channelInterface protoListener.ChannelInterface) {
+func (p *ProtoEcho) ConnectionDown(customCon *protoListener.CustomConnection, channelInterface protoListener.ProtocolAPI) {
 	log.Printf("CONNECTION IS DOW. TO/FROM <%s>\n", customCon.GetConnectionKey())
 }
-func (p *ProtoEcho) HandleMessage(selfProto protoListener.ProtoInterface, customConn *protoListener.CustomConnection, protoSource protoListener.APP_PROTO_ID, data *protoListener.CustomReader) {
+
+func sameMsgs(m1, m2 *EchoMessage) bool {
+	return m1.Count == m2.Count && m1.Data == m2.Data
+}
+func (p *ProtoEcho) ClientHandleMessage(selfProto protoListener.ProtocolAPI, customConn *protoListener.CustomConnection, protoSource protoListener.APP_PROTO_ID, data *protoListener.CustomReader) {
+	msg := DeserializeData(data)
+	m := p.MessagesSent[int(msg.Count)]
+	log.Println("CLIENT RECEIVED THE SAME MESSAGE ? ", sameMsgs(m, msg), m.Count)
+}
+func (p *ProtoEcho) HandleMessage(protoAPI protoListener.ProtocolAPI, customConn *protoListener.CustomConnection, protoSource protoListener.APP_PROTO_ID, data *protoListener.CustomReader) {
 	msg := DeserializeData(data)
 	log.Println("RECEIVED MESSAGE IS:", msg.Data, msg.Count)
 	pair := &protoListener.CustomPair[string, *EchoMessage]{
 		First:  customConn.GetConnectionKey(),
 		Second: msg,
 	}
-	err2 := p.listener.SendLocalEvent(p.ProtocolUniqueId(), 50, pair, p.Proto2GoingToReply) //registar no server
+	err2 := protoAPI.SendLocalEvent(50, pair, p.Proto2GoingToReply) //registar no server
 	if err2 != nil {
 		log.Println("ERROR SENDING DATA TO ANOTHER PROTO", err2)
 	}
 }
-func sameMsgs(m1, m2 *EchoMessage) bool {
-	return m1.Count == m2.Count && m1.Data == m2.Data
-}
-func (p *ProtoEcho) ClientHandleMessage(selfProto protoListener.ProtoInterface, customConn *protoListener.CustomConnection, protoSource protoListener.APP_PROTO_ID, data *protoListener.CustomReader) {
-	msg := DeserializeData(data)
-	m := p.MessagesSent[int(msg.Count)]
-	log.Println("CLIENT RECEIVED THE SAME MESSAGE ? ", sameMsgs(m, msg), m.Count)
-}
-func (p *ProtoEcho) HandleMessage2(selfProto protoListener.ProtoInterface, customConn *protoListener.CustomConnection, protoSource protoListener.APP_PROTO_ID, data *protoListener.CustomReader) {
+
+func (p *ProtoEcho) HandleMessage2(protoAPI protoListener.ProtocolAPI, customConn *protoListener.CustomConnection, protoSource protoListener.APP_PROTO_ID, data *protoListener.CustomReader) {
 	fmt.Println("RECEIVED A RANDOM MESSAGE FROM ", customConn.GetConnectionKey())
 	msg := DeserializeDataRandomMSG(data)
 	println("RECEIVED RANDOM MESSAGE IS:", msg.Data, msg.Count)
@@ -81,7 +83,7 @@ func (p *ProtoEcho) Proto2GoingToReply(sourceProto protoListener.APP_PROTO_ID, d
 	pair, ok := data.(*protoListener.CustomPair[string, *EchoMessage])
 
 	if ok {
-		result, er := p.ChannelInterface.SendAppData2(pair.First, 45, 45, pair.Second, 2)
+		result, er := p.ProtoAPI.NetworkInterface().SendAppData2(pair.First, 45, 45, pair.Second, 2)
 		log.Println("SERVER REPLIED WITH:", result, er)
 	}
 }
@@ -93,7 +95,7 @@ func test() {
 	println(msg2)
 }
 func (p *ProtoEcho) SendMessage(address string, data string) (int, error) {
-	return p.ChannelInterface.SendAppData(address, p.ProtocolUniqueId(), p.ProtocolUniqueId(), []byte(data))
+	return p.ProtoAPI.NetworkInterface().SendAppData(address, p.ProtocolUniqueId(), p.ProtocolUniqueId(), []byte(data))
 }
 
 func NewEchoProto(manager protoListener.ProtoListenerInterface) *ProtoEcho {

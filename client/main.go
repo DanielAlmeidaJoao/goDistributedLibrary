@@ -13,10 +13,10 @@ import (
 /**
 type ProtoInterface interface {
 	ProtocolUniqueId() gobabelUtils.APP_PROTO_ID
-	OnStart(channelInterface *channel.ChannelInterface)
-	OnMessageArrival(from *net.Addr, source, destProto gobabelUtils.APP_PROTO_ID, msg []byte, channelInterface *channel.ChannelInterface)
-	ConnectionUp(from *net.Addr, channelInterface *channel.ChannelInterface)
-	ConnectionDown(from *net.Addr, channelInterface *channel.ChannelInterface)
+	OnStart(channelInterface *channel.protoAPI)
+	OnMessageArrival(from *net.Addr, source, destProto gobabelUtils.APP_PROTO_ID, msg []byte, channelInterface *channel.protoAPI)
+	ConnectionUp(from *net.Addr, channelInterface *channel.protoAPI)
+	ConnectionDown(from *net.Addr, channelInterface *channel.protoAPI)
 }
 */
 
@@ -39,7 +39,7 @@ func PeriodicTimerHandler(timerId int, proto protoListener.APP_PROTO_ID, message
 			Count: int32(protocol.Counter),
 		}
 		protocol.MessagesSent[protocol.Counter] = &msg
-		for _, value := range protocol.ChannelInterface.Connections() {
+		for _, value := range protocol.ProtoAPI.NetworkInterface().Connections() {
 			result, er := value.SendData2(45, 45, &msg, 2)
 			log.Println("MSG SENT AFTER TIMER: ", result, er)
 		}
@@ -56,7 +56,7 @@ func main() {
 	proto := testUtils.NewEchoProto(protocolsManager)
 	//protocolsManager.AddProtocol(proto)
 	//err1 := protocolsManager.RegisterNetworkMessageHandler(gobabelUtils.MessageHandlerID(2), proto.HandleMessage)
-	err2 := protocolsManager.RegisterNetworkMessageHandler(protoListener.MessageHandlerID(2), proto.ClientHandleMessage) //registar no server
+	err2 := proto.ProtoAPI.RegisterNetworkMessageHandler(protoListener.MessageHandlerID(2), proto.ClientHandleMessage) //registar no server
 	if err2 != nil {
 		log.Println("ERROR REGISTERING MSG HANDLERS:", err2)
 	}
@@ -69,8 +69,8 @@ func main() {
 	}
 
 	time.Sleep(time.Second * 3)
-	proto.ChannelInterface.OpenConnection("localhost", 3000, 45)
-	proto.ChannelInterface.OpenConnection("localhost", 3000, 45)
+	proto.ProtoAPI.NetworkInterface().OpenConnection("localhost", 3000, 45)
+	proto.ProtoAPI.NetworkInterface().OpenConnection("localhost", 3000, 45)
 	time.Sleep(time.Second * 5)
 
 	_ = testUtils.EchoMessage{
@@ -78,13 +78,13 @@ func main() {
 		Count: 134,
 	}
 	//SendAppData2(hostAddress string, source, destProto gobabelUtils.APP_PROTO_ID, msg NetworkMessage, msgHandlerId gobabelUtils.MessageHandlerID) (int, error)
-	//result, er := proto.ChannelInterface.SendAppData2(proto.ServerAddr.GetConnectionKey(), 45, 45, &msg, 2)
+	//result, er := proto.protoAPI.SendAppData2(proto.ServerAddr.GetConnectionKey(), 45, 45, &msg, 2)
 	//result, er = proto.ServerAddr.SendData2(45, 45, &msg, 2)
 
 	//fmt.Println("RESULT IS: ", result, er)
 
 	//protocolsManager.RegisterTimeout(proto.ProtocolUniqueId(), time.Second*5, &msg, TimerFunc1)
-	protocolsManager.RegisterPeriodicTimeout(proto.ProtocolUniqueId(), time.Millisecond*200, proto, PeriodicTimerHandler)
+	proto.ProtoAPI.RegisterPeriodicTimeout(time.Millisecond*200, proto, PeriodicTimerHandler)
 
 	protocolsManager.WaitForProtocolsToEnd(false)
 }
