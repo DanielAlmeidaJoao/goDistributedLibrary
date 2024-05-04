@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 	"time"
 )
 
@@ -52,6 +53,7 @@ type timerArgs struct {
 	periodicTimer *time.Ticker
 }
 type ProtoListener struct {
+	sharedLock     sync.RWMutex
 	protocols      map[APP_PROTO_ID]*protoWrapper
 	waitChannel    chan APP_PROTO_ID
 	channel        ChannelInterface
@@ -86,11 +88,12 @@ func NewProtocolListener(address string, port int, connectionType CONNECTION_TYP
 	return protoL
 }
 func (l *ProtoListener) WaitForProtocolsToEnd(closeConnections bool) {
-	var protoID APP_PROTO_ID
 	for {
-		protoID = <-l.waitChannel
-		delete(l.protocols, protoID)
-		if len(l.protocols) == 0 {
+		_ = <-l.waitChannel
+		l.sharedLock.RLock()
+		empty := len(l.protocols) == 0
+		l.sharedLock.RUnlock()
+		if empty {
 			if closeConnections {
 				l.channel.CloseConnections()
 			}
@@ -137,7 +140,9 @@ func (protoW *protoWrapper) RegisterPeriodicTimeout(duration time.Duration, data
 }
 
 func (protoW *protoWrapper) SendLocalEvent(destProto APP_PROTO_ID, data interface{}, funcToExecute LocalProtoComHandlerFunc) error {
+	protoW.protoListener.sharedLock.RLock()
 	proto := protoW.protoListener.protocols[destProto]
+	protoW.protoListener.sharedLock.RUnlock()
 	if proto == nil {
 		return UNKNOWN_PROTOCOL
 	}
@@ -170,13 +175,16 @@ func (protoW *protoWrapper) CancelTimer(timerId int) (bool, error) {
 
 func (l *ProtoListener) AddProtocol(protocol ProtoInterface, networkQueueSize int, timeoutQueueSize int, localCommQueueSize int) error {
 	//TODO make the constants dynamic
-	if l.protocols[(protocol).ProtocolUniqueId()] != nil {
+	l.sharedLock.RLock()
+	protocolExists := l.protocols[(protocol).ProtocolUniqueId()] != nil
+	l.sharedLock.RUnlock()
+	if protocolExists {
 		return PROTOCOL_EXIST_ALREADY
 	}
 	if ALL_PROTO_ID == protocol.ProtocolUniqueId() {
 		return RESERVED_PROTOCOL_ID
 	}
-	l.protocols[(protocol).ProtocolUniqueId()] = &protoWrapper{
+	newProto := &protoWrapper{
 		queue:                   make(chan *NetworkEvent, networkQueueSize),
 		proto:                   protocol,
 		timeoutChannel:          make(chan int, timeoutQueueSize),
@@ -185,13 +193,20 @@ func (l *ProtoListener) AddProtocol(protocol ProtoInterface, networkQueueSize in
 		timerHandlers:           make(map[int]*timerArgs),
 		protoListener:           l,
 	}
+	l.sharedLock.Lock()
+	l.protocols[(protocol).ProtocolUniqueId()] = newProto
+	l.sharedLock.Unlock()
 	return nil
 }
 func (l *ProtoListener) RemoveProtocol(id APP_PROTO_ID) {
+	l.sharedLock.RLock()
 	proto := l.protocols[id]
+	l.sharedLock.RUnlock()
 	if proto != nil {
 		//TODO USE LOCKS HERE
+		l.sharedLock.Lock()
 		delete(l.protocols, id)
+		l.sharedLock.Unlock()
 		close(proto.queue)
 		close(proto.timeoutChannel)
 		close(proto.localCommunicationQueue)
@@ -202,7 +217,10 @@ func (l *ProtoListener) RemoveProtocol(id APP_PROTO_ID) {
 // TODO should all protocols receive connection up event ??
 // TODO should a protocol be registered after all the protocols have already started
 func (l *ProtoListener) StartProtocols() error {
-	if len(l.protocols) == 0 {
+	l.sharedLock.RLock()
+	noProtocols := len(l.protocols) == 0
+	l.sharedLock.RUnlock()
+	if noProtocols {
 		log.Fatal(NO_PROTOCOLS_TO_RUN)
 		return NO_PROTOCOLS_TO_RUN
 	}
@@ -215,13 +233,19 @@ func (l *ProtoListener) StartProtocols() error {
 }
 func (l *ProtoListener) StartProtocol(protocol ProtoInterface, networkQueueSize int, timeoutQueueSize int, localCommQueueSize int) error {
 	err := l.AddProtocol(protocol, networkQueueSize, timeoutQueueSize, localCommQueueSize)
-	if len(l.protocols) == 1 {
+	l.sharedLock.RLock()
+	lenOne := len(l.protocols) == 1
+	l.sharedLock.RUnlock()
+	if lenOne {
 		if ch, ok := l.channel.(*tcpChannel); ok {
 			ch.Start()
 		}
 	}
 	if err == nil {
-		l.auxRunProtocol(l.protocols[protocol.ProtocolUniqueId()])
+		l.sharedLock.RLock()
+		proto := l.protocols[protocol.ProtocolUniqueId()]
+		l.sharedLock.RUnlock()
+		l.auxRunProtocol(proto)
 	}
 	return err
 }
@@ -292,12 +316,16 @@ func (l *ProtoListener) auxRunProtocol(protoW *protoWrapper) {
 func (l *ProtoListener) DeliverEvent(event *NetworkEvent) {
 	if event.DestProto == ALL_PROTO_ID {
 		//log.Default().Println("GOING TO DELIVER AN EVENT TO ALL PROTOCOLS")
+		l.sharedLock.RLock()
 		for _, proto := range l.protocols {
 			proto.queue <- event
 		}
+		l.sharedLock.Unlock()
 	} else {
 		//protocol := l.protocols[event.SourceProto]
+		l.sharedLock.RLock()
 		protocol := l.protocols[event.DestProto]
+		l.sharedLock.Unlock()
 		if protocol == nil {
 			log.Println("RECEIVED EVENT FOR A NON EXISTENT PROTOCOL!")
 		} else {
