@@ -320,12 +320,12 @@ func (l *ProtoListener) DeliverEvent(event *NetworkEvent) {
 		for _, proto := range l.protocols {
 			proto.queue <- event
 		}
-		l.sharedLock.Unlock()
+		l.sharedLock.RUnlock()
 	} else {
 		//protocol := l.protocols[event.SourceProto]
 		l.sharedLock.RLock()
 		protocol := l.protocols[event.DestProto]
-		l.sharedLock.Unlock()
+		l.sharedLock.RUnlock()
 		if protocol == nil {
 			log.Println("RECEIVED EVENT FOR A NON EXISTENT PROTOCOL!")
 		} else {
